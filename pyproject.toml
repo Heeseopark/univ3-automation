@@ -1,0 +1,37 @@
+﻿[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "univ3-automation-python"
+version = "0.1.0"
+description = "Univ3 admin automation CLI"
+requires-python = ">=3.11"
+dependencies = [
+  "colorama>=0.4.6",
+  "pytz>=2023.3",
+  "pyperclip>=1.8.2",
+  "pandas>=2.0.0",
+  "openpyxl>=3.1.0",
+  "python-pptx>=0.6.21",
+  "Pillow>=10.0.0",
+  "PyPDF2>=3.0.0",
+  "pyautogui>=0.9.54",
+  "pywin32>=306",
+  "gspread>=5.10.0",
+  "google-auth>=2.22.0",
+  "google-api-python-client>=2.140.0",
+  "requests>=2.31.0",
+  "certifi>=2023.7.22",
+  "tqdm>=4.66.0",
+  "rich>=13.0.0"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+univ3-admin = "univ3_automation.cli:main"
