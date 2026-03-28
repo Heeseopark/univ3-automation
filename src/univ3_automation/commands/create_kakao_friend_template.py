@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 카카오톡 플러스친구 템플릿 자동 생성 스크립트
@@ -79,20 +79,25 @@ def find_kakao_friend_files(kakao_friend_dir, sunday_date):
 
     return cover_file, watermark_file
 
+def paste_text(text, submit=False):
+    """클립보드 붙여넣기로 입력해 한글/특수문자 타이핑 이슈를 피한다."""
+    pyperclip.copy(str(text))
+    time.sleep(0.2)
+    pyautogui.hotkey('ctrl', 'v')
+    if submit:
+        pyautogui.press('enter')
+
 def upload_file_with_path(file_path):
     """파일 경로를 직접 입력하여 업로드"""
     time.sleep(0.5)
-    pyperclip.copy(file_path)
-    pyautogui.hotkey('ctrl', 'v')
-    # pyautogui.press('right')
-    pyautogui.press('enter')
+    paste_text(file_path, submit=True)
 
 def create_kakao_friend_template(sunday_date, cover_file, watermark_file):
     """카카오톡 플러스친구 템플릿 생성"""
 
     # 날짜 정보 생성
-    m = sunday_date.strftime("%-m") if os.name != 'nt' else sunday_date.strftime("%#m")
-    dd = sunday_date.strftime("%d")
+    m = sunday_date.month
+    dd = sunday_date.day
 
     # 제목 생성
     title = f"[{m}월 {dd}일 예수사람 집회 안내]"
@@ -114,7 +119,7 @@ def create_kakao_friend_template(sunday_date, cover_file, watermark_file):
         url = "https://business.kakao.com/_lcxnrd/messages/new/widelist"
         pyautogui.hotkey('ctrl', 'l')  # 주소창 포커스
         time.sleep(0.5)
-        pyautogui.write(url)
+        paste_text(url)
         pyautogui.press('enter')
 
         # 3. 로그인 및 제목 입력 대기
@@ -124,8 +129,7 @@ def create_kakao_friend_template(sunday_date, cover_file, watermark_file):
 
         # 4. 제목 입력
         print(f"{GREEN}4. 제목을 입력합니다...{RESET}")
-        pyperclip.copy(title)
-        pyautogui.hotkey('ctrl', 'v')
+        paste_text(title)
 
         # 5. Tab 3번, 엔터
         print(f"{GREEN}5. 다음 섹션으로 이동합니다...{RESET}")
@@ -142,8 +146,7 @@ def create_kakao_friend_template(sunday_date, cover_file, watermark_file):
         time.sleep(2)
         pyautogui.press('tab')
         pyautogui.press('tab')
-        pyperclip.copy("☞ 클릭하면 주보로!")
-        pyautogui.hotkey('ctrl', 'v')
+        paste_text("☞ 클릭하면 주보로!")
 
         # 8. Tab 6번, 엔터, 워터마크 첨부
         print(f"{GREEN}8. 첫 번째 워터마크를 첨부합니다...{RESET}")
@@ -157,8 +160,7 @@ def create_kakao_friend_template(sunday_date, cover_file, watermark_file):
         time.sleep(2)
         pyautogui.press('tab')
         pyautogui.press('tab')
-        pyperclip.copy("☞ ")
-        pyautogui.hotkey('ctrl', 'v')
+        paste_text("☞ ")
 
         # 10. Tab 6번, 엔터, 워터마크 첨부
         print(f"{GREEN}10. 두 번째 워터마크를 첨부합니다...{RESET}")
@@ -172,8 +174,7 @@ def create_kakao_friend_template(sunday_date, cover_file, watermark_file):
         time.sleep(2)
         pyautogui.press('tab')
         pyautogui.press('tab')
-        pyperclip.copy("☞ ")
-        pyautogui.hotkey('ctrl', 'v')
+        paste_text("☞ ")
 
         # 12. Tab 4번, 엔터
         print(f"{GREEN}12. 다음 섹션으로 이동합니다...{RESET}")
@@ -194,13 +195,12 @@ def create_kakao_friend_template(sunday_date, cover_file, watermark_file):
         time.sleep(2)
         for _ in range(2):
             pyautogui.press('tab')
-        pyperclip.copy("☞ ")
-        pyautogui.hotkey('ctrl', 'v')
+        paste_text("☞ ")
 
         print(f"\n{GREEN}✓ 카카오톡 플러스친구 템플릿 생성이 완료되었습니다!{RESET}")
         print("\n" + "="*60)
         print(f"{CYAN}이제 다음 작업을 수행해주세요:{RESET}")
-        print(f"  1. 링크 URL을 입력하세요")
+        print(f"  1. 링크 URL은 직접 입력하지 말고 붙여넣으세요")
         print(f"  2. 템플릿을 저장하세요")
         print("\n" + "="*60)
 
@@ -224,8 +224,7 @@ def main():
     # 이번주 일요일 날짜
     this_sunday = get_this_sunday()
     sunday_str = this_sunday.strftime("%m%d")
-
-    print(f"\n이번주 일요일: {MAGENTA}{this_sunday.strftime('%Y년 %m월 %d일')} ({sunday_str}){RESET}")
+    print(f"\n이번주 일요일: {MAGENTA}{this_sunday.year}년 {this_sunday.month}월 {this_sunday.day}일 ({sunday_str}){RESET}")
 
     # 카톡플친 파일 확인
     parent_dir = get_base_dir()

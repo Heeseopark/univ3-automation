@@ -20,9 +20,9 @@ import pythoncom
 import pytz
 
 # ====================================
-# 설정 - 수정할 슬라이드 번호 (0부터 시작)
+# 설정 - 수정할 슬라이드 번호 (1부터 시작)
 # ====================================
-SLIDE_NUMBER = 0
+SLIDE_NUMBER = 1
 
 # 색상 코드 정의
 try:
@@ -215,6 +215,8 @@ def modify_ppt_date(meeting_name="주일집회"):
 
         pythoncom.CoInitialize()
 
+        powerpoint = None
+        presentation = None
         try:
             powerpoint = win32com.client.Dispatch("PowerPoint.Application")
             powerpoint.Visible = 1  # PowerPoint는 반드시 Visible이어야 함
@@ -223,22 +225,25 @@ def modify_ppt_date(meeting_name="주일집회"):
             # 절대 경로 사용
             presentation = powerpoint.Presentations.Open(ppt_file_path)
 
+            total_slides = presentation.Slides.Count
+            if SLIDE_NUMBER < 1 or SLIDE_NUMBER > total_slides:
+                raise ValueError(f"요청한 슬라이드 번호가 범위를 벗어났습니다: {SLIDE_NUMBER} (전체 {total_slides})")
+
             # 슬라이드를 이미지로 저장
             output_image = f"카톡플친 커버 {date_str}.png"
             output_image_path = os.path.join(kakao_dir, output_image)
 
-            # 슬라이드를 원본 크기로 내보내기
-
-            # 슬라이드 내보내기 (원본 크기)
-            presentation.Slides[SLIDE_NUMBER].Export(output_image_path, "PNG", 2268, 1134)
+            # COM 컬렉션은 Item(1)부터 시작하므로 Item()으로 접근
+            target_slide = presentation.Slides.Item(SLIDE_NUMBER)
+            target_slide.Export(output_image_path, "PNG", 2268, 1134)
 
             print(f"이미지 저장 완료: {output_image_path}")
 
-            # PowerPoint 종료
-            presentation.Close()
-            powerpoint.Quit()
-
         finally:
+            if presentation is not None:
+                presentation.Close()
+            if powerpoint is not None:
+                powerpoint.Quit()
             pythoncom.CoUninitialize()
 
         print("\n작업이 성공적으로 완료되었습니다!")
