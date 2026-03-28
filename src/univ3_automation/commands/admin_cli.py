@@ -12,7 +12,6 @@ from datetime import datetime, timedelta
 from io import StringIO
 from typing import TypedDict
 
-import pytz
 
 # 키보드 입력 처리
 try:
@@ -82,12 +81,14 @@ class TabSection(TypedDict):
 
 
 def get_this_sunday():
-    """현재 한국 시간 기준으로 이번 주 일요일 날짜를 반환"""
+    """?? ?? ?? ???? ?? ? ??? ??? ??"""
+    import pytz
+
     kst = pytz.timezone("Asia/Seoul")
     now_kst = datetime.now(kst)
     weekday = now_kst.weekday()
 
-    if weekday == 6:  # 이미 일요일인 경우
+    if weekday == 6:  # ?? ???? ??
         sunday = now_kst
     else:
         sunday = now_kst + timedelta(days=6 - weekday)
@@ -107,7 +108,14 @@ def build_sections(mmdd: str) -> list[TabSection]:
             "items": [
                 {"title": "프린트용 PDF 선택 + 이메일 전송", "script": "select_and_send_pdfs.py"},
                 {"title": "큐티 월 업데이트 (엑셀 수정 + PDF)", "script": "update_qt_month.py"},
+            ],
+        },
+        {
+            "label": "출석체크",
+            "items": [
                 {"title": "다음 주 출석부 생성 (구글 시트 → PDF)", "script": "attendance_generator.py"},
+                {"title": "EBS → GBS 등반 처리", "script": "ebs_to_gbs_promotion.py"},
+                {"title": "EBS 라인업정보 추가", "script": "ebs_lineup_add.py"},
             ],
         },
         {
@@ -155,6 +163,7 @@ def build_sections(mmdd: str) -> list[TabSection]:
             ],
         },
     ]
+
 
 
 def _render_buffered_content(content: str) -> None:
@@ -387,3 +396,4 @@ if __name__ == "__main__":
             clear_screen()
             print("\n프로그램을 종료합니다.")
         sys.exit(0)
+
