@@ -171,6 +171,20 @@ def get_google_credentials_candidates() -> list[Path]:
     return unique
 
 
+
+
+def get_birthday_selector_columns() -> dict[str, str]:
+    config = load_config()
+    columns = config.get("birthday_selector", {})
+    return {
+        "name_column": str(columns.get("name_column", "G")),
+        "gender_column": str(columns.get("gender_column", "E")),
+        "grade_column": str(columns.get("grade_column", "F")),
+        "birth_year_column": str(columns.get("birth_year_column", "AM")),
+        "birth_month_column": str(columns.get("birth_month_column", "AN")),
+        "birth_day_column": str(columns.get("birth_day_column", "AO")),
+    }
+
 def get_email_recipients(default: list[str] | None = None) -> list[str]:
     if default is None:
         default = []
@@ -179,3 +193,4 @@ def get_email_recipients(default: list[str] | None = None) -> list[str]:
     if isinstance(recipients, list) and recipients:
         return [str(item) for item in recipients]
     return default
+

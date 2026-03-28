@@ -94,7 +94,7 @@ try:
 
     print("\n" + "=" * 120)
     print(f"header=5로 읽었을 때 컬럼 개수: {len(df.columns)}")
-    print(f"\n컬럼 목록 (AL열은 37번째, AM열은 38번째여야 함):")
+    print(f"\n컬럼 목록 (설정된 생년월일 열: AM, AN, AO):")
     for i, col in enumerate(df.columns):
         print(f"{i:3d}: {col}")
 
@@ -117,4 +117,5 @@ except Exception as e:
     print(f"오류 발생: {e}")
     import traceback
     traceback.print_exc()
+
 

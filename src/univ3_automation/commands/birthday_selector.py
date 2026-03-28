@@ -14,6 +14,7 @@ from runtime_paths import (
     get_google_credentials_candidates,
     get_google_sheet_id,
     get_screenshot_dirs,
+    get_birthday_selector_columns,
 )
 
 import os
@@ -151,25 +152,38 @@ def extract_birthdays(excel_file, week_ranges, selected_weeks):
     # 데이터 읽기 (라인업정보 시트, header는 0행)
     df = pd.read_excel(excel_file, sheet_name='라인업정보', header=0)
 
-    # 컬럼 인덱스:
-    # 3번 = 리더 (D열)
-    # 4번 = 성별 (E열)
-    # 5번 = 학년 (F열)
-    # 6번 = 이름 (G열)
-    # 36번 = 년
-    # 37번 = 월
-    # 38번 = 일
-
     columns = df.columns.tolist()
+    birthday_columns = get_birthday_selector_columns()
 
-    # 컬럼이 충분한지 확인
-    if len(columns) > 38:
-        name_col = columns[6]     # 이름 (G열)
-        gender_col = columns[4]   # 성별 (E열)
-        grade_col = columns[5]    # 학년 (F열)
-        birth_year_col = columns[36]   # 년
-        birth_month_col = columns[37]  # 월
-        birth_day_col = columns[38]    # 일
+    def column_index(letter: str) -> int:
+        index = 0
+        for char in letter.upper():
+            index = index * 26 + (ord(char) - ord("A") + 1)
+        return index - 1
+
+    name_index = column_index(birthday_columns["name_column"])
+    gender_index = column_index(birthday_columns["gender_column"])
+    grade_index = column_index(birthday_columns["grade_column"])
+    birth_year_index = column_index(birthday_columns["birth_year_column"])
+    birth_month_index = column_index(birthday_columns["birth_month_column"])
+    birth_day_index = column_index(birthday_columns["birth_day_column"])
+
+    required_indexes = [
+        name_index,
+        gender_index,
+        grade_index,
+        birth_year_index,
+        birth_month_index,
+        birth_day_index,
+    ]
+
+    if len(columns) > max(required_indexes):
+        name_col = columns[name_index]
+        gender_col = columns[gender_index]
+        grade_col = columns[grade_index]
+        birth_year_col = columns[birth_year_index]
+        birth_month_col = columns[birth_month_index]
+        birth_day_col = columns[birth_day_index]
 
         # 필요한 데이터만 추출
         df_filtered = df[[name_col, gender_col, grade_col, birth_year_col, birth_month_col, birth_day_col]].copy()
@@ -433,4 +447,8 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+
+
 
