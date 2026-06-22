@@ -1,4 +1,4 @@
-﻿from runtime_paths import (
+from runtime_paths import (
     get_base_dir,
     get_dir,
     get_downloads_dir,
@@ -320,19 +320,19 @@ def export_to_pdf(excel_file_path, month=None):
 
 def main():
     """메인 실행 함수"""
-    # 프린트 폴더에서 '교재 큐티 구매.xlsx' 파일 찾기
+    # 프린트 폴더에서 '큐티 구매.xlsx' 파일 찾기
     base_dir = get_base_dir()
-    target_file = os.path.join(base_dir, "프린트", "교재 큐티 구매.xlsx")
+    target_file = os.path.join(base_dir, "프린트", "큐티 구매.xlsx")
 
     if not os.path.exists(target_file):
-        print(f"{RED}파일을 찾을 수 없습니다: 교재 큐티 구매.xlsx{RESET}")
+        print(f"{RED}파일을 찾을 수 없습니다: 큐티 구매.xlsx{RESET}")
         print(f"경로: {target_file}")
         return False
 
     # 사용자에게 월 선택 받기
     selected_month = select_month()
 
-    print(f"\n{CYAN}찾은 엑셀 파일: 교재 큐티 구매.xlsx{RESET}")
+    print(f"\n{CYAN}찾은 엑셀 파일: 큐티 구매.xlsx{RESET}")
     print(f"처리 중: {selected_month}월로 업데이트...")
 
     # 엑셀 파일 처리 (선택한 월 전달)
@@ -349,7 +349,7 @@ def main():
             print(f"\n{RED}PDF 변환에 실패했습니다.{RESET}")
             return False
     else:
-        print(f"{YELLOW}교재 큐티 구매.xlsx 파일 처리를 건너뜁니다.{RESET}")
+        print(f"{YELLOW}큐티 구매.xlsx 파일 처리를 건너뜁니다.{RESET}")
         return False
 
 if __name__ == "__main__":

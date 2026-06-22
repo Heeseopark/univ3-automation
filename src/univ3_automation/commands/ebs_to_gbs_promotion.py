@@ -3,7 +3,7 @@
 """
 EBS -> GBS 등반 처리 스크립트.
 
-사용자 입력 4개를 받아 라인업정보 소속과 No를 갱신하고,
+이름으로 EBS 등반 대상자를 검색/선택한 뒤 라인업정보 소속과 No를 갱신하고,
 출석부의 주간 출석 값/시각 서식을 새 No 위치로 이동한다.
 """
 
@@ -29,7 +29,7 @@ ATTENDANCE_SHEET = "출석부"
 SPREADSHEET_ID = get_google_sheet_id()
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-EBS_GROUP_NUMBERS = (25, 45, 55, 75, 10, 20, 30, 40, 50, 60, 70)
+EBS_GROUP_NUMBERS = (25, 45, 55, 75, 56, 10, 20, 30, 40, 50, 60, 70)
 EBS_GROUP_NUMBER_SET = set(EBS_GROUP_NUMBERS)
 IMMOVABLE_LEADER_ROLES = {"고을지기", "리더", "간사"}
 ATTENDANCE_START_COLUMN_INDEX = 9   # J
@@ -327,6 +327,54 @@ def build_member_options(members: list[LineupMember], ebs_group_no: int) -> list
     return options
 
 
+def build_searchable_ebs_members(members: list[LineupMember]) -> list[LineupMember]:
+    options = [
+        member
+        for member in members
+        if member.group_no in EBS_GROUP_NUMBER_SET and member.is_movable
+    ]
+    options.sort(key=lambda item: (item.name, item.group_no, item.no))
+    return options
+
+
+def normalize_search_query(value: str) -> str:
+    return "".join(value.split()).lower()
+
+
+def search_ebs_members_by_name(members: list[LineupMember], query: str) -> list[LineupMember]:
+    query_key = normalize_search_query(query)
+    if not query_key:
+        return []
+
+    matched: list[tuple[int, str, int, int, LineupMember]] = []
+    for member in members:
+        name_key = normalize_search_query(member.name)
+        display_key = normalize_search_query(member.display_name)
+        if query_key not in name_key and query_key not in display_key:
+            continue
+
+        if name_key == query_key:
+            priority = 0
+        elif name_key.startswith(query_key):
+            priority = 1
+        elif display_key.startswith(query_key):
+            priority = 2
+        else:
+            priority = 3
+
+        matched.append((priority, member.name, member.group_no, member.no, member))
+
+    matched.sort(key=lambda item: (item[0], item[1], item[2], item[3]))
+    return [item[4] for item in matched]
+
+
+def find_ebs_option(options: list[GroupOption], group_no: int) -> GroupOption:
+    for option in options:
+        if option.group_no == group_no:
+            return option
+    raise PromotionError("선택한 대상자의 EBS 정보를 찾지 못했습니다.")
+
+
 def build_promotion_plan(
     members: list[LineupMember],
     attendance_rows: dict[int, AttendanceRowRef],
@@ -617,6 +665,13 @@ def render_member_option(member: LineupMember) -> str:
     return f"{member.display_name} / No {member.no}"
 
 
+def render_member_search_option(member: LineupMember) -> str:
+    return (
+        f"{member.display_name} / No {member.no} / "
+        f"EBS {member.group_no} / {member.town} / {member.leader}"
+    )
+
+
 def render_town_option(town: str) -> str:
     return town
 
@@ -629,12 +684,18 @@ def clear_screen() -> None:
     os.system("cls" if os.name == "nt" else "clear")
 
 
-def display_selection_menu(title: str, options: list[Any], current_index: int, render) -> None:
+def display_selection_menu(
+    title: str,
+    options: list[Any],
+    current_index: int,
+    render,
+    escape_label: str = "취소",
+) -> None:
     clear_screen()
     print("=" * 72)
     print(title)
     print("=" * 72)
-    print("↑/↓: 이동, Enter: 선택, ESC: 취소")
+    print(f"↑/↓: 이동, Enter: 선택, ESC: {escape_label}")
     print()
 
     for idx, option in enumerate(options):
@@ -642,7 +703,7 @@ def display_selection_menu(title: str, options: list[Any], current_index: int, r
         print(f"{cursor}{render(option)}")
 
 
-def prompt_selection(title: str, options: list[Any], render) -> Any:
+def prompt_selection(title: str, options: list[Any], render, escape_label: str = "취소") -> Any:
     if not options:
         raise PromotionError(f"{title} 후보가 없습니다.")
 
@@ -652,7 +713,7 @@ def prompt_selection(title: str, options: list[Any], render) -> Any:
         import msvcrt
 
         while True:
-            display_selection_menu(title, options, current_index, render)
+            display_selection_menu(title, options, current_index, render, escape_label)
             key = msvcrt.getch()
 
             if key in {b"\xe0", b"\x00"}:
@@ -677,7 +738,7 @@ def prompt_selection(title: str, options: list[Any], render) -> Any:
             tty.setraw(sys.stdin.fileno())
 
             while True:
-                display_selection_menu(title, options, current_index, render)
+                display_selection_menu(title, options, current_index, render, escape_label)
                 key = sys.stdin.read(1)
 
                 if key == "\x1b":
@@ -695,6 +756,41 @@ def prompt_selection(title: str, options: list[Any], render) -> Any:
 
         finally:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+
+
+def prompt_member_search(members: list[LineupMember]) -> LineupMember:
+    searchable_members = build_searchable_ebs_members(members)
+    if not searchable_members:
+        raise PromotionError("EBS 범위에 검색 가능한 등반 대상자가 없습니다.")
+
+    while True:
+        clear_screen()
+        print("=" * 72)
+        print("1. EBS 내 등반 대상자 이름 검색")
+        print("=" * 72)
+        print("이름으로 검색한 뒤 결과에서 대상자를 선택합니다.")
+        print("검색 범위는 EBS 일반 조원만 포함합니다. 빈값 입력 시 취소됩니다.")
+        print()
+
+        keyword = input("검색어: ").strip()
+        if not keyword:
+            raise KeyboardInterrupt
+
+        member_options = search_ebs_members_by_name(searchable_members, keyword)
+        if not member_options:
+            print(f"\n'{keyword}' 검색 결과가 없습니다.")
+            input("Enter를 누르면 다시 검색합니다...")
+            continue
+
+        try:
+            return prompt_selection(
+                f"1-1. 검색 결과에서 대상자 선택 ({keyword})",
+                member_options,
+                render_member_search_option,
+                escape_label="검색으로 돌아가기",
+            )
+        except KeyboardInterrupt:
+            continue
 
 
 def print_plan_summary(plan: PromotionPlan, moved_marks: int) -> None:
@@ -748,20 +844,16 @@ def main(argv: list[str] | None = None) -> int:
         metadata, members, attendance_refs = load_snapshot(service)
 
         ebs_options = build_ebs_options(members)
-        selected_ebs = prompt_selection("1. EBS 선택", ebs_options, render_ebs_option)
-
-        member_options = build_member_options(members, selected_ebs.group_no)
-        if not member_options:
-            raise PromotionError("선택한 EBS에 등반 처리할 일반 조원이 없습니다.")
-        selected_member = prompt_selection("2. EBS 내 등반 대상자 선택", member_options, render_member_option)
+        selected_member = prompt_member_search(members)
+        selected_ebs = find_ebs_option(ebs_options, selected_member.group_no)
 
         town_options = build_town_options(members)
-        selected_town = prompt_selection("3. 이동할 GBS 고을 선택", town_options, render_town_option)
+        selected_town = prompt_selection("2. 이동할 GBS 고을 선택", town_options, render_town_option)
 
         gbs_options = build_gbs_options(members, selected_town)
         if not gbs_options:
             raise PromotionError("선택한 고을에 이동 가능한 GBS가 없습니다.")
-        selected_gbs = prompt_selection("4. 이동할 GBS 선택", gbs_options, render_gbs_option)
+        selected_gbs = prompt_selection("3. 이동할 GBS 선택", gbs_options, render_gbs_option)
 
         plan = build_promotion_plan(
             members,

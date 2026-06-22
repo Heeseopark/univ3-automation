@@ -80,11 +80,6 @@ class ParsedMember:
         return f"{self.gender}{self.grade} {self.name}"
 
 
-@dataclass(frozen=True)
-class ExistingMemberRow:
-    member: LineupMember
-    cells: list[dict[str, Any]]
-
 
 @dataclass(frozen=True)
 class GroupBlock:
@@ -321,21 +316,6 @@ def build_grade_formula(row_number: int) -> str:
     )
 
 
-def build_existing_member_cells(existing: ExistingMemberRow, target_row: int) -> list[dict[str, Any]]:
-    cells = copy.deepcopy(existing.cells)
-    member = existing.member
-    set_cell_value(cells, 0, member.no)
-    set_cell_value(cells, 1, member.group_no)
-    set_cell_value(cells, 2, member.town)
-    set_cell_value(cells, 3, member.leader)
-    set_cell_value(cells, 4, member.gender)
-    set_cell_value(cells, 5, grade_to_int(member.grade))
-    set_cell_value(cells, 6, member.name)
-    set_cell_formula(cells, H_COLUMN_INDEX, build_attendance_formula(target_row))
-    set_cell_formula(cells, I_COLUMN_INDEX, build_grade_formula(target_row))
-    return cells
-
-
 def build_new_member_cells(
     template_cells: list[dict[str, Any]],
     source_ebs: GroupOption,
@@ -365,28 +345,12 @@ def build_new_member_cells(
 
 
 def build_sorted_assignments(
-    existing_rows: list[ExistingMemberRow],
     new_members: list[ParsedMember],
     target_rows: list[int],
     template_cells: list[dict[str, Any]],
     source_ebs: GroupOption,
 ) -> list[SortedAssignment]:
     sortable: list[tuple[tuple[int, str], SortedAssignment]] = []
-    for existing in existing_rows:
-        sortable.append(
-            (
-                sort_key(grade_to_int(existing.member.grade), existing.member.name),
-                SortedAssignment(
-                    target_row=0,
-                    member_no=existing.member.no,
-                    gender=existing.member.gender,
-                    grade=grade_to_int(existing.member.grade),
-                    name=existing.member.name,
-                    source_cells=build_existing_member_cells(existing, existing.member.sheet_row),
-                    is_new=False,
-                ),
-            )
-        )
     for member in new_members:
         sortable.append(
             (
@@ -460,8 +424,9 @@ def prompt_multiline_text() -> str:
     print("=" * 72)
     print("2. 추가할 EBS 조원 텍스트 입력")
     print("=" * 72)
-    print("예시: 여4 이지윤, 여3 권호진, 남1 문준혁")
-    print("붙여넣은 뒤 빈 줄에서 Enter를 누르면 입력이 끝납니다.")
+    print("예시: 남 1 홍길동, 여 2 김철수")
+    print("붙여넣은 뒤 Enter를 한 번 누르면 입력이 끝납니다.")
+    print("여러 명을 직접 입력할 때는 쉼표로 구분해 한 줄로 입력하세요.")
 
     lines: list[str] = []
     while True:
@@ -469,6 +434,15 @@ def prompt_multiline_text() -> str:
         if not line.strip():
             break
         lines.append(line.rstrip())
+        if sys.platform == "win32":
+            import msvcrt
+            import time
+
+            # On Windows, pasted lines remain in the console buffer. If nothing
+            # is pending after the current line is submitted, finish immediately.
+            time.sleep(0.05)
+            if not msvcrt.kbhit():
+                break
 
     text = "\n".join(lines).strip()
     if not text:
@@ -509,24 +483,6 @@ def validate_cli_args(argv: list[str]) -> None:
     if argv:
         joined = " ".join(argv)
         raise PromotionError(f"지원하지 않는 옵션입니다: {joined}")
-
-
-def build_existing_member_rows(
-    members: list[LineupMember],
-    block: GroupBlock,
-    row_cells: dict[int, list[dict[str, Any]]],
-) -> list[ExistingMemberRow]:
-    existing: list[ExistingMemberRow] = []
-    members_by_row = {member.sheet_row: member for member in members}
-    for row_number in block.general_row_numbers:
-        member = members_by_row.get(row_number)
-        if member is None:
-            raise PromotionError(f"{row_number}행의 조원 데이터를 찾지 못했습니다.")
-        cells = row_cells.get(row_number)
-        if cells is None:
-            raise PromotionError(f"{row_number}행의 셀 데이터를 읽지 못했습니다.")
-        existing.append(ExistingMemberRow(member=member, cells=cells))
-    return existing
 
 
 def next_member_no(members: list[LineupMember], group_no: int) -> int:
@@ -581,11 +537,8 @@ def main(argv: list[str] | None = None) -> int:
         if template_cells is None:
             raise PromotionError("새 row의 서식 기준 행을 읽지 못했습니다.")
 
-        group_members = [member for member in members if member.group_no == selected_ebs.group_no]
-        existing_member_rows = build_existing_member_rows(group_members, block, row_cells)
-        target_rows = block.general_row_numbers + list(range(block.insert_row, block.insert_row + len(numbered_new_members)))
+        target_rows = list(range(block.insert_row, block.insert_row + len(numbered_new_members)))
         assignments = build_sorted_assignments(
-            existing_member_rows,
             numbered_new_members,
             target_rows,
             template_cells,
