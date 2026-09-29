@@ -43,8 +43,8 @@ except ImportError:
 # 이메일 수신자 설정
 RECIPIENTS = [
     "heeseopark99@gmail.com",
-    "Kokyoul0203@gmail.com",
-    "westyup0725@naver.com"
+    "kangyeso0204@gmail.com",
+    "blessolivia060606@gmail.com"
     # 필요시 추가 수신자를 여기에 추가
 ]
 

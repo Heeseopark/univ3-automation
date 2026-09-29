@@ -29,7 +29,7 @@ ATTENDANCE_SHEET = "출석부"
 SPREADSHEET_ID = get_google_sheet_id()
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-EBS_GROUP_NUMBERS = (25, 45, 55, 75, 56, 10, 20, 30, 40, 50, 60, 70)
+EBS_GROUP_NUMBERS = (35, 66, 76, 56, 10, 20, 30, 40, 50, 60, 70)
 EBS_GROUP_NUMBER_SET = set(EBS_GROUP_NUMBERS)
 IMMOVABLE_LEADER_ROLES = {"고을지기", "리더", "간사"}
 ATTENDANCE_START_COLUMN_INDEX = 9   # J

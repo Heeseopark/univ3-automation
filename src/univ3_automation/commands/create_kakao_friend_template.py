@@ -143,7 +143,7 @@ def create_kakao_friend_template(sunday_date, cover_file, watermark_file):
 
         # 7. Tab 2번, 텍스트 입력
         print(f"{GREEN}7. 첫 번째 링크 텍스트를 입력합니다...{RESET}")
-        time.sleep(2)
+        time.sleep(10)
         pyautogui.press('tab')
         pyautogui.press('tab')
         paste_text("☞ 클릭하면 주보로!")
@@ -157,7 +157,7 @@ def create_kakao_friend_template(sunday_date, cover_file, watermark_file):
 
         # 9. Tab 2번, 텍스트 입력
         print(f"{GREEN}9. 두 번째 링크 텍스트를 입력합니다...{RESET}")
-        time.sleep(2)
+        time.sleep(10)
         pyautogui.press('tab')
         pyautogui.press('tab')
         paste_text("☞ ")
@@ -171,7 +171,7 @@ def create_kakao_friend_template(sunday_date, cover_file, watermark_file):
 
         # 11. Tab 2번, 텍스트 입력
         print(f"{GREEN}11. 세 번째 링크 텍스트를 입력합니다...{RESET}")
-        time.sleep(2)
+        time.sleep(10)
         pyautogui.press('tab')
         pyautogui.press('tab')
         paste_text("☞ ")
@@ -192,7 +192,7 @@ def create_kakao_friend_template(sunday_date, cover_file, watermark_file):
 
         # 14. Tab 2번, 텍스트 입력
         print(f"{GREEN}14. 마지막 링크 텍스트를 입력합니다...{RESET}")
-        time.sleep(2)
+        time.sleep(10)
         for _ in range(2):
             pyautogui.press('tab')
         paste_text("☞ ")
@@ -280,4 +280,3 @@ if __name__ == "__main__":
         input()
 
     sys.exit(0 if success else 1)
-
